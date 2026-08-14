@@ -1,4 +1,4 @@
-# KHynes 3D Synapse Analysis Pipeline
+# 3D Synapse Analysis Pipeline
 
 ## Overview
 
@@ -694,7 +694,4 @@ School of Neuroscience
 
 [KHynes 3D Pipeline](https://github.com/Allodi-Lab/KHynes_3Dpipeline)
 
-```
 
-**That is the one to paste into `README.md` on GitHub.**
-```
