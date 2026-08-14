@@ -1,0 +1,36 @@
+Date: 09/07/2026
+File: cropped_tight.tif (i think it was file C02_Z0589)
+Model: Custom 
+Settings: Diameter 28, Cellprob -1, Flow 0.4
+ROIs = 64
+Notes: I cropped the entire image to only include the cluster of neurons, it originally had ROI of 59 so i manually added some in
+b/c it was missing a few obvious neurons 
+
+File: cropped_test2.tif (C02_Z0620)
+Model: Custom
+Settings: same as above
+ROIs = 61
+Notes: this was longer cluster of neurons on the image so the crop was lengthy, but it doesn't look like it missed any obvious 
+neurons.
+
+File: cropped_test3.tif (C02_Z0700)
+Model: Custom
+Settings: same as above
+ROIs = 62
+Notes: this was a longer cluster as well, it looks as if it moved down the spine, which as I'm increasing the file numbers
+that's what it is. Consistent ROI numbers though.
+
+Date: 17/07/2026 
+I had to convert the .ome.tif files into just .tif files, so i ran a jupyter notebook code on my copy of the images and 
+converted them. Now, I'm starting the batch processing. However, one file failed to convert so I'm just typing that in
+File Name: Failed: 14-23-20_382_NF-780_Glyt2-647_Gef-555-nf-488_2763um_z-3um_tiles_DSI_12x_2-5x_Blaze_C02_Z0000.ome.tif
+Anothe Error: <tifffile.TiffFile '14-23-20_382_NF-…2_Z0000.ome.tif'> OME series failed to read '14-23-20_382_NF-780_Glyt2
+-647_Gef-555-nf-488_2763um_z-3um_tiles_DSI_12x_2-5x_Blaze_C00_Z0000.ome.tif', raised FileNotFoundError(2, 'No such file
+or directory'). Missing data are zeroed.
+
+Date: 04/08/2026
+I have converted all of the C02 files into .tif files and batch processing and stacking is done. Now I am converting C00 and C01 
+files into .tif files and then the channels will be processed using SynQuant in FIJI so i can detect the pre-and postsynaptic dots.
+Then I'm going to create a code that will match the synaptic dots to the neuron positions to get synapse count per neuron.
+THEN all of the above will be applied to the WT data so I can make comparisons between them. C02 will be the most code heavy 
+for WT and then C00 and C01 will be put into SynQuant as well. 
