@@ -1,0 +1,20 @@
+Metric,Value
+Paired neurons,79460.0
+Total GlyT2 synapses,993397.0
+Total Gephyrin synapses,1161821.0
+Mean GlyT2 synapses/neuron,12.502
+Mean Gephyrin synapses/neuron,14.621
+Median GlyT2 synapses/neuron,0.0
+Median Gephyrin synapses/neuron,0.0
+GlyT2 standard deviation,41.577
+Gephyrin standard deviation,41.035
+Minimum GlyT2 synapses/neuron,0.0
+Minimum Gephyrin synapses/neuron,0.0
+Maximum GlyT2 synapses/neuron,609.0
+Maximum Gephyrin synapses/neuron,2154.0
+Mean GlyT2:Gephyrin ratio,2.021
+Median GlyT2:Gephyrin ratio,0.2
+Wilcoxon statistic,119574968.0
+Wilcoxon p-value,3.1519322845527616e-203
+Spearman rho,0.7217
+Spearman p-value,0.0

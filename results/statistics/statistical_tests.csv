@@ -1,0 +1,3 @@
+Analysis,Comparison,N,Statistic,P-value,Interpretation
+Wilcoxon signed-rank test,GlyT2 vs Gephyrin,79460,119574968.0,3.1519322845527616e-203,Highly significant (p < 0.001)
+Spearman correlation,GlyT2 vs Gephyrin,79460,0.7217,0.0,Highly significant (p < 0.001)
