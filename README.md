@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a 3D image analysis pipeline developed to analyse synaptic inputs in light-sheet microscopy images from the hTDP-43 mouse model.
+This repository contains a 3D image analysis pipeline developed to **analyze** synaptic inputs in light-sheet microscopy images from the hTDP-43 mouse model.
 
 The main goal of the pipeline is to identify neurons, detect synaptic puncta, match synapses to individual neurons, and produce quantitative measurements that can be used to study synaptic connectivity.
 
@@ -185,7 +185,7 @@ A WT-specific cropping script is also included:
 
 * `crop_WT_C01.py`
 
-Additional scripts such as `check_alignment.py` and `check_volume.py` can be used to check the image data before continuing with analysis.
+Additional scripts such as `check_alignment.py` and `check_volume.py` can be used to check the image data before continuing with the analysis.
 
 ---
 
@@ -330,7 +330,7 @@ These figures are used to visually check image alignment, neuron segmentation, s
 
 # 7. Statistical Analysis
 
-Once the synapses have been matched to neurons, the resulting data can be statistically analysed.
+Once the synapses have been matched to neurons, the resulting data can be statistically **analyzed**.
 
 The main statistical scripts include:
 
@@ -424,7 +424,7 @@ cellpose2
 
 Open **Anaconda Prompt** on Windows.
 
-## 2. Activate the environment
+## 2. Activate the Environment
 
 Run:
 
@@ -440,7 +440,7 @@ After activation, the command prompt should show something similar to:
 
 This indicates that the `cellpose2` environment is active.
 
-## 3. Run Python scripts
+## 3. Run Python Scripts
 
 Navigate to the directory containing the repository or script and run a Python file using:
 
@@ -504,9 +504,9 @@ This repository primarily contains the completed analysis for the **hTDP-43 mous
 The overall project is intended to include two sides:
 
 1. **hTDP-43 mouse model**
-2. **WT (wild-type/normal mouse) model**
+2. **WT (wild-type) mouse model**
 
-The hTDP-43 side of the pipeline was developed and analysed during this project.
+The hTDP-43 side of the pipeline was developed and **analyzed** during this project.
 
 The WT component has not yet been completed and will be continued by another student during the next academic year.
 
@@ -552,7 +552,7 @@ Because some scripts contain paths specific to the original analysis environment
 
 # Repository Outputs
 
-The repository contains three main types of outputs.
+The repository contains four main types of outputs.
 
 ### Matching
 
@@ -602,7 +602,7 @@ This documents the development of the pipeline and can be used to understand how
 
 # Summary
 
-This repository provides the computational framework for analysing 3D light-sheet microscopy data from the hTDP-43 mouse model.
+This repository provides the computational framework for **analyzing** 3D light-sheet microscopy data from the hTDP-43 mouse model.
 
 The pipeline combines:
 
