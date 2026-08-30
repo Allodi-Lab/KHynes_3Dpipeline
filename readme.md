@@ -507,4 +507,3 @@ This work extends the 2D analysis pipeline described in Mora et al. (2024).
 
 ---
 
-*University of St Andrews · School of Medicine · Allodi Lab · 2026*
