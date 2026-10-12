@@ -1,0 +1,5 @@
+Dataset,Test,N,Statistic,P-value,Note
+All neurons (original),"Wilcoxon signed-rank, GlyT2 vs Gephyrin",79460,119574968.0,3.1519322845527616e-203,"Neuron entries are 2D cross-sections; the same cell appears in several slices, so p-values are optimistic"
+All neurons (original),"Spearman correlation, GlyT2 vs Gephyrin",79460,0.7217,0.0,"Neuron entries are 2D cross-sections; the same cell appears in several slices, so p-values are optimistic"
+Inside analyzed region (corrected),"Wilcoxon signed-rank, GlyT2 vs Gephyrin",18140,78321922.5,0.06015127387579427,"Neuron entries are 2D cross-sections; the same cell appears in several slices, so p-values are optimistic"
+Inside analyzed region (corrected),"Spearman correlation, GlyT2 vs Gephyrin",18140,0.0101,0.1737896756657632,"Neuron entries are 2D cross-sections; the same cell appears in several slices, so p-values are optimistic"

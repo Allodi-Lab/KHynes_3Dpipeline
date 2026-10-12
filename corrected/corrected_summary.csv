@@ -1,0 +1,16 @@
+Measure,All neurons (original),Inside analyzed region (corrected)
+Neuron entries (slice cross-sections),79460,18140
+Total GlyT2 dots,993397,968882
+Total Gephyrin dots,1161821,878522
+Mean GlyT2 per neuron,12.5,53.41
+Mean Gephyrin per neuron,14.62,48.43
+Median GlyT2 per neuron,0.0,21.0
+Median Gephyrin per neuron,0.0,38.0
+GlyT2 IQR (25th-75th),0-0,4-76
+Gephyrin IQR (25th-75th),0-8,16-67
+% with zero GlyT2,77.5,7.8
+% with zero Gephyrin,70.5,7.7
+% with zero of both,68.6,0.8
+Median GlyT2:Gephyrin ratio,0.2,0.596
+Total GlyT2 / total Gephyrin,0.855,1.103
+"Mean GlyT2:Gephyrin ratio (skewed, not recommended)",2.021,2.734
