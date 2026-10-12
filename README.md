@@ -1,621 +1,273 @@
 # hTDP-43: 3D Synapse Analysis Pipeline
+### Allodi Lab, University of St Andrews
+
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1%20CUDA-orange)
+![Cellpose](https://img.shields.io/badge/Cellpose-4.2.1-green)
+![Institution](https://img.shields.io/badge/Allodi%20Lab-St%20Andrews-purple)
+![Status](https://img.shields.io/badge/Status-TDP--43%20Complete%20%7C%20WT%20To%20Do-yellow)
+
+---
 
 ## Overview
 
-This repository contains a 3D image analysis pipeline developed to **analyze** synaptic inputs in light-sheet microscopy images from the hTDP-43 mouse model.
+This repository holds a pipeline for counting synapses on motor neurons in 3D light-sheet microscopy images of the spinal cord from the hTDP-43 mouse model of ALS.
 
-The main goal of the pipeline is to identify neurons, detect synaptic puncta, match synapses to individual neurons, and produce quantitative measurements that can be used to study synaptic connectivity.
+The pipeline finds motor neurons, finds synaptic dots for two markers, assigns each dot to its nearest neuron, and then summarizes the counts.
 
-The pipeline focuses on two synaptic markers:
+- **GlyT2** marks presynaptic glycinergic terminals (the sending side of an inhibitory synapse).
+- **Gephyrin** marks postsynaptic sites (the receiving side).
 
-- **GlyT2** — used as a marker of presynaptic glycinergic terminals.
-- **Gephyrin** — used as a marker of postsynaptic sites.
+It extends the 2D analysis in Mora et al. (2024) into 3D. The raw images and large intermediate files are not stored here because of their size.
 
-The analysis was developed using Python, Cellpose, SynQuant, and several scientific image-processing libraries. The pipeline processes large microscopy datasets and produces both visual quality-control outputs and quantitative statistical results.
-
-This repository contains the computational part of the project. The original microscopy datasets and large intermediate image files are not included because of their size.
+> **Please read [Corrected results](#corrected-results) before using any numbers from this repository.** The original statistics in `results/statistics/` include a large number of neurons that were never checked for synapses, which changes the conclusions.
 
 ---
 
-# Project Structure
+## Project status
+
+| Part | Status |
+|------|--------|
+| hTDP-43 pipeline (segmentation, detection, matching, stats) | Done |
+| Corrected statistics (neurons inside the analyzed region only) | Done, see `corrected/` |
+| Linking 2D neuron outlines into 3D cells | To do |
+| Edge-based synapse matching | To do |
+| WT (wild-type) comparison | To do, starter scripts included |
+
+---
+
+## Repository structure
 
 ```text
 KHynes_3Dpipeline/
-│
-├── notebooks/
-│   ├── Overlay Elements of Synapse detection results.csv
-│   ├── all_stats.py
-│   ├── animate_slices.py
-│   ├── batch_process.py
-│   ├── batch_process_WT.py
-│   ├── check_alignment.py
-│   ├── check_volume.py
-│   ├── convert_C00.py
-│   ├── convert_C01.py
-│   ├── convert_WT_C00.py
-│   ├── convert_WT_C01.py
-│   ├── convert_WT_C02.py
-│   ├── crop_00.py
-│   ├── crop_01.py
-│   ├── crop_02.py
-│   ├── crop_WT_C01.py
-│   ├── detect_synapse.py
-│   ├── detect_synapse_C01.py
-│   ├── detect_synapses.py
-│   ├── final_analysis.py
-│   ├── make_3d_volume_gif.py
-│   ├── make_slice_gif.py
-│   ├── mask_3d_gif.py
-│   ├── match_synapse.py
-│   ├── match_synapse_C01.py
-│   ├── match_synapses.py
-│   ├── neuron_measurement.py
-│   ├── stack_masks.py
-│   ├── stack_masks_WT.py
-│   ├── statistics.py
-│   ├── stats_2.py
-│   ├── synquant_batch.ijm
-│   ├── synquant_batch.py
-│   ├── visualization_matching.py
-│   ├── visualize_all_channels.py
-│   ├── visualize_detections.py
-│   ├── visualize_detections_01.py
-│   ├── visualize_matching.py
-│   ├── visualize_matching2.py
-│   ├── visualize_neurons.py
-│   └── visualize_overlay.py
-│
+├── notebooks/            All pipeline scripts (see Script guide below)
 ├── results/
-│   │
-│   ├── matching/
-│   │   ├── TDP43_gephyrin_counts.csv
-│   │   └── TDP43_synapse_counts.csv
-│   │
-│   ├── neuron_measurements/
-│   │   ├── matching_quality.csv
-│   │   └── per_neuron_measurements.csv
-│   │
-│   ├── statistics/
-│   │   ├── FINAL_ANALYSIS_SUMMARY.csv
-│   │   ├── Stats_Terminal.PNG
-│   │   ├── glyt2_gephyrin_correlation.png
-│   │   ├── glyt2_vs_gephyrin.png
-│   │   ├── glyt2_vs_gephyrin_boxplot.png
-│   │   ├── paired_neuron_comparison.png
-│   │   ├── paired_neuron_data.csv
-│   │   ├── paired_neuron_statistics.csv
-│   │   ├── priority_statistical_tests.csv
-│   │   ├── priority_summary_statistics.csv
-│   │   ├── statistical_tests.csv
-│   │   ├── summary_statistics.csv
-│   │   ├── synapse_counts_by_Z_slice.png
-│   │   ├── synapse_distributions.png
-│   │   ├── synapse_per_slice.png
-│   │   └── synapse_statistics_by_Z_slice.csv
-│   │
-│   └── visualizations/
-│       ├── C01_detection_visualization.png
-│       ├── alignment_check.png
-│       ├── detection_visualization.png
-│       ├── draft.txt
-│       ├── full_overlay.png
-│       ├── matching_visualization.png
-│       ├── matching_visualization2.png
-│       ├── matching_visualization_gephyrin.png
-│       └── neuron_visualization.png
-│
-└── Progress_updates.txt
-````
-
----
-
-# Pipeline Overview
-
-The analysis is divided into several main stages.
-
-```text
-Light-Sheet Microscopy Data
-            │
-            ▼
-      Image Conversion
-            │
-            ▼
-       Image Cropping
-            │
-            ▼
-     Channel Processing
-            │
-            ▼
-     Neuron Segmentation
-            │
-            ▼
-     Synapse Detection
-            │
-            ▼
-   Synapse-to-Neuron Matching
-            │
-            ▼
-     Neuron Measurements
-            │
-            ▼
-      Statistical Analysis
-            │
-            ▼
- Visualization + Quantitative Results
+│   ├── matching/            Synapse counts per neuron, per slice
+│   ├── neuron_measurements/ Per-neuron measurements and matching summary
+│   ├── statistics/          ORIGINAL stats and plots (all neurons, see note above)
+│   └── visualizations/      Quality-check images
+├── corrected/            CORRECTED stats and plots (use these)
+├── progress_updates.txt  Running notes from the project
+└── README.md
 ```
 
 ---
 
-# 1. Image Conversion
+## Pipeline overview
 
-The microscopy data are initially converted into TIFF format so that they can be processed using Python-based image analysis tools.
+```text
+Light-sheet images (.ome.tif, one file per slice per channel)
+        │
+        ▼
+Convert to standard .tif
+        │
+        ▼
+Neuron segmentation on C02 (Cellpose, custom model, full image)
+        │
+        ▼
+Crop C00 and C01 to the analyzed region
+        │
+        ▼
+Synapse dot detection on C00 and C01 (blob_log)
+        │
+        ▼
+Match each dot to the nearest neuron center (KD-tree, 300 px limit)
+        │
+        ▼
+Per-neuron counts → statistics → plots
+```
 
-The conversion scripts include:
+### Channels
 
-* `convert_C00.py`
-* `convert_C01.py`
+| Channel | Marker | Used for |
+|---------|--------|----------|
+| C00 | GlyT2 (647 nm) | Presynaptic dots |
+| C01 | Gephyrin (555 nm) | Postsynaptic dots |
+| C02 | Neurofilament / NeuroTrace | Finding motor neuron cell bodies |
 
-Additional scripts are included for the WT dataset:
+The file names list four dyes (NF-780, GlyT2-647, Gef-555, nf-488) but there are only three channels, so this mapping should be confirmed with Dr Allodi.
 
-* `convert_WT_C00.py`
-* `convert_WT_C01.py`
-* `convert_WT_C02.py`
+### Analyzed region (crop)
 
-The C00 and C01 channels correspond to the two synaptic markers used in the analysis.
+Synapse detection only covers this region of each slice, which was chosen to contain the ventral horn motor neurons.
 
-For the TDP-43 dataset:
+| x | y | width | height |
+|---|---|-------|--------|
+| 6588 | 252 | 4992 | 7740 |
 
-* **C00 = GlyT2**
-* **C01 = Gephyrin**
-* **C02 = neuron segmentation masks**
+Dot positions are shifted back into full-image coordinates (x + 6588, y + 252) before matching.
 
 ---
 
-# 2. Image Cropping and Preparation
+## Step by step
 
-Large microscopy images are cropped into regions that can be processed more efficiently.
+### 1. Convert images
 
-Scripts used for this stage include:
+The raw `.ome.tif` files are converted to plain `.tif` so the Python tools can read them. One C02 file (Z0000) failed to convert and is noted in `progress_updates.txt`.
 
-* `crop_00.py`
-* `crop_01.py`
-* `crop_02.py`
+### 2. Segment neurons (Cellpose)
 
-A WT-specific cropping script is also included:
+Motor neurons are found in the C02 channel with a custom Cellpose model fine-tuned from `cpsam_v2` on about 82 hand-labeled motor neurons.
 
-* `crop_WT_C01.py`
+| Setting | Value |
+|---------|-------|
+| Base model | cpsam_v2 |
+| Diameter | 28 |
+| Cellprob threshold | -1.0 |
+| Flow threshold | 0.4 |
+| Training epochs | 100 |
 
-Additional scripts such as `check_alignment.py` and `check_volume.py` can be used to check the image data before continuing with the analysis.
+`batch_process.py` runs the model on every slice of the **full, uncropped** image. Each slice is segmented on its own, so neuron IDs are only meaningful within one slice.
 
----
+### 3. Detect synapse dots
 
-# 3. Neuron Segmentation
+Dots are found with `skimage.feature.blob_log` on the cropped C00 and C01 images. Each slice is contrast-stretched to its own 2nd–98th percentile, shrunk to 50% for speed, and then the dot positions are scaled back up.
 
-Neuron masks are generated to identify individual neurons within the microscopy images.
+| Setting | Value |
+|---------|-------|
+| min_sigma / max_sigma | 1 / 5 |
+| threshold | 0.05 |
+| Resolution | 50% |
 
-The segmentation masks are used to assign each neuron a unique identifier.
+SynQuantVid in FIJI was tried first but was not used in the final pipeline. Those scripts are kept for reference.
 
-The pipeline then calculates the position of each neuron, including its centroid coordinates.
+### 4. Match dots to neurons
 
-The main neuron measurement script is:
+Each dot is assigned to the nearest neuron center in the same slice, as long as it is within 300 pixels. This gives a GlyT2 count and a Gephyrin count for every neuron in every slice.
 
-```text
-neuron_measurement.py
-```
+### 5. Statistics
 
-The resulting measurements are stored in:
-
-```text
-results/neuron_measurements/
-```
-
-including:
-
-```text
-per_neuron_measurements.csv
-matching_quality.csv
-```
+`final_analysis.py` pairs the GlyT2 and Gephyrin counts for each neuron and runs a Wilcoxon signed-rank test and a Spearman correlation. `neuron_measurement.py` adds neuron area and dot density.
 
 ---
 
-# 4. Synapse Detection
+## Script guide
 
-Synaptic puncta are detected separately for the different channels.
+Several scripts have similar names because of earlier versions. These are the ones that produced the results.
 
-The main detection scripts include:
+| Step | Script used | Older / unused version |
+|------|-------------|------------------------|
+| Convert | `convert_C00.py`, `convert_C01.py` | |
+| Crop | `crop_00.py`, `crop_01.py`, `crop_02.py` | |
+| Segment | `batch_process.py`, `stack_masks.py` | |
+| Detect GlyT2 | `detect_synapse.py` | `detect_synapses.py` |
+| Detect Gephyrin | `detect_synapse_C01.py` | |
+| Match GlyT2 | `match_synapse.py` | `match_synapses.py` (reads old SynQuant output, no crop shift) |
+| Match Gephyrin | `match_synapse_C01.py` | |
+| Measure | `neuron_measurement.py` | |
+| Stats | `final_analysis.py` | `statistics.py`, `stats_2.py`, `all_stats.py` |
+| SynQuant | | `synquant_batch.py`, `synquant_batch.ijm` |
+| WT starters | `convert_WT_C00/01/02.py`, `crop_WT_C01.py`, `batch_process_WT.py`, `stack_masks_WT.py` | |
+| Checks and plots | `check_alignment.py`, `check_volume.py`, `visualize_*.py`, `*_gif.py`, `animate_slices.py` | |
 
-```text
-detect_synapse.py
-detect_synapse_C01.py
-detect_synapses.py
-```
-
-SynQuant is also used as part of the synapse detection process.
-
-The repository includes both:
-
-```text
-synquant_batch.py
-synquant_batch.ijm
-```
-
-Detection visualizations can be generated using:
-
-```text
-visualize_detections.py
-visualize_detections_01.py
-```
-
-These visualizations provide a way to check whether detected synaptic puncta are correctly positioned relative to the microscopy data.
+The folders that `detect_synapse.py` and `detect_synapse_C01.py` write to are named `C00_synquant2` and `C01_synquant`, even though they hold blob_log results.
 
 ---
 
-# 5. Synapse-to-Neuron Matching
+## Corrected results
 
-After neurons and synapses have been detected, synaptic puncta are assigned to individual neurons.
+### What was wrong
 
-This allows the analysis to move from simply counting synapses across an image to calculating:
+Neuron segmentation ran on the full image, but synapse detection only ran inside the cropped region. So about **77% of neuron entries sit outside the area where synapses were looked for**, and they show up with zero (or nearly zero) synapses. Including them made the median 0 and created a strong correlation that came mostly from shared zeros.
 
-**number of synapses per neuron**
+### What was done
 
-The matching scripts include:
-
-```text
-match_synapse.py
-match_synapse_C01.py
-match_synapses.py
-```
-
-The results are stored in:
-
-```text
-results/matching/
-```
-
-The main output files are:
-
-```text
-TDP43_synapse_counts.csv
-TDP43_gephyrin_counts.csv
-```
-
-These contain information including:
-
-* Z slice
-* neuron ID
-* neuron centroid X coordinate
-* neuron centroid Y coordinate
-* GlyT2 synapse count
-* Gephyrin synapse count
-
-This creates a neuron-level dataset that can be used for downstream statistical analysis.
-
----
-
-# 6. Quality Control and Visualization
-
-Several scripts were developed to visually inspect the different stages of the pipeline.
-
-These include:
-
-```text
-visualize_all_channels.py
-visualize_neurons.py
-visualize_overlay.py
-visualization_matching.py
-visualize_matching.py
-visualize_matching2.py
-```
-
-The resulting figures are stored in:
-
-```text
-results/visualizations/
-```
-
-Examples include:
-
-* `alignment_check.png`
-* `detection_visualization.png`
-* `C01_detection_visualization.png`
-* `neuron_visualization.png`
-* `full_overlay.png`
-* `matching_visualization.png`
-* `matching_visualization2.png`
-* `matching_visualization_gephyrin.png`
-
-These figures are used to visually check image alignment, neuron segmentation, synapse detection, and synapse-to-neuron matching.
-
----
-
-# 7. Statistical Analysis
-
-Once the synapses have been matched to neurons, the resulting data can be statistically **analyzed**.
-
-The main statistical scripts include:
-
-```text
-statistics.py
-stats_2.py
-all_stats.py
-final_analysis.py
-```
-
-The statistical analysis includes measurements such as:
-
-* Total number of neurons
-* Total number of synapses
-* Mean synapses per neuron
-* Median synapses per neuron
-* Standard deviation
-* Minimum and maximum synapse counts
-* GlyT2-to-Gephyrin ratios
-* Per-Z-slice synapse counts
-* Paired neuron comparisons
-* Wilcoxon statistical testing
-* Spearman correlation analysis
-
-The statistical outputs are stored in:
-
-```text
-results/statistics/
-```
-
-This includes CSV files containing numerical results and PNG files containing plots.
-
----
-
-# 8. Final Analysis
-
-The final analysis combines the neuron-level data from the GlyT2 and Gephyrin datasets.
-
-Because both datasets are derived from the same neuron set, the analysis can treat GlyT2 and Gephyrin measurements as paired observations.
-
-The final analysis includes comparisons between presynaptic GlyT2 counts and postsynaptic Gephyrin counts.
-
-The resulting outputs include:
-
-```text
-paired_neuron_data.csv
-paired_neuron_statistics.csv
-priority_statistical_tests.csv
-priority_summary_statistics.csv
-FINAL_ANALYSIS_SUMMARY.csv
-```
-
-Correlation and comparison figures include:
-
-```text
-glyt2_gephyrin_correlation.png
-glyt2_vs_gephyrin.png
-glyt2_vs_gephyrin_boxplot.png
-paired_neuron_comparison.png
-```
-
----
-
-# 9. Per-Z-Slice Analysis
-
-The dataset contains information about the Z slice in which each neuron was detected.
-
-This allows synaptic measurements to be examined across tissue depth.
-
-The pipeline produces:
-
-```text
-synapse_counts_by_Z_slice.png
-synapse_per_slice.png
-synapse_statistics_by_Z_slice.csv
-```
-
-These outputs can be used to identify changes in synapse counts across the depth of the light-sheet microscopy volume.
-
----
-
-# Environment Setup
-
-The pipeline was developed using a Conda environment called:
-
-```text
-cellpose2
-```
-
-## 1. Open Anaconda Prompt
-
-Open **Anaconda Prompt** on Windows.
-
-## 2. Activate the Environment
-
-Run:
+`corrected/corrected_stats.py` takes `results/statistics/paired_neuron_statistics.csv` and keeps only the neuron entries whose center falls inside the crop region. Then it reruns the summary statistics, tests, and plots. It only needs that CSV, not the raw images.
 
 ```bash
+python corrected_stats.py ../results/statistics/paired_neuron_statistics.csv output_folder
+```
+
+### Before and after
+
+| Measure | All neurons (original) | Inside analyzed region (corrected) |
+|---------|------------------------|------------------------------------|
+| Neuron entries | 79,460 | 18,140 |
+| Median GlyT2 per neuron | 0 | 21 |
+| Median Gephyrin per neuron | 0 | 38 |
+| Zero of both markers | 69% | 1% |
+| Total GlyT2 ÷ total Gephyrin | 0.86 | 1.10 |
+| Wilcoxon, GlyT2 vs Gephyrin | p ≈ 3 × 10⁻²⁰³ | p = 0.06 |
+| Spearman correlation | 0.72 | 0.01 |
+
+With only the neurons that were actually analyzed, GlyT2 and Gephyrin counts are not clearly different and are not correlated.
+
+### Files in `corrected/`
+
+| File | What it shows |
+|------|---------------|
+| `1_neuron_positions_vs_crop.png` | Where neurons were found vs. where synapses were detected |
+| `2_zero_counts_before_after.png` | Share of neurons with zero synapses, before and after |
+| `3_glyt2_vs_gephyrin_corrected.png` | GlyT2 vs Gephyrin counts per neuron |
+| `4_correlation_corrected.png` | GlyT2 vs Gephyrin for each neuron entry |
+| `5_counts_by_depth_corrected.png` | Median counts across Z slices |
+| `corrected_summary.csv` | Summary stats, original vs corrected |
+| `corrected_tests.csv` | Wilcoxon and Spearman results, original vs corrected |
+| `corrected_neuron_data.csv` | The 18,140 neuron entries used |
+| `corrected_by_Z_slice.csv` | Counts per Z slice |
+| `corrected_stats.py` | Script that made all of the above |
+
+---
+
+## Known issues and next steps
+
+These are still open, roughly in order of importance.
+
+1. **Neurons are counted once per slice, not once per cell.** Slices are 3 µm apart and a motor neuron spans many slices, so one cell appears many times. About 55% of neuron outlines reappear in almost the same spot in the next slice. This makes the p-values look stronger than they should. Cellpose's `stitch_threshold` setting can link outlines across slices into 3D cells.
+2. **The 300-pixel matching radius is very wide.** Dots are assigned to the nearest neuron center, not to dots touching the cell. One neuron in slices 868–871 received over 2,100 Gephyrin dots. Counting dots within a few pixels of each neuron's outline would be closer to "synapses on this neuron." The pixel size in microns is needed to choose a good distance.
+3. **Slices ~840–921 look unreliable for Gephyrin.** Gephyrin counts drop to zero, then jump to 1,000–2,150 per neuron. This is likely an image problem at the end of the stack.
+4. **Counts swing a lot with depth, and the two markers often move in opposite directions.** Real paired synapses should track each other. One possible cause is that each slice is contrast-stretched on its own, which can turn noise into "dots" in slices with few real ones. Checking detection against hand counts on a few slices would help.
+5. **Cellpose finds objects across the whole tissue**, not just the ventral horn. Cropping the masks to the analyzed region before matching would fix the main issue at the source.
+6. **The "100% match rate" in `matching_quality.csv` is not a real check.** It compares matched dots against matched dots.
+7. **The mean GlyT2:Gephyrin ratio is skewed** by a few neurons with very high ratios. Use the median ratio or the ratio of totals instead.
+8. **WT data has not been processed.** The starter scripts are ready once the data is available.
+
+---
+
+## Setup
+
+The pipeline was run on a Windows workstation with an NVIDIA RTX A5000, using a conda environment called `cellpose2`.
+
+```bash
+conda create -n cellpose2 python=3.10
 conda activate cellpose2
+conda install pytorch torchvision pytorch-cuda=12.4 -c pytorch -c nvidia
+pip install cellpose==4.2.1
+pip install tifffile numpy pandas scipy matplotlib scikit-image imageio roifile jupyter pyimagej
 ```
 
-After activation, the command prompt should show something similar to:
-
-```text
-(cellpose2) C:\Users\YourName>
-```
-
-This indicates that the `cellpose2` environment is active.
-
-## 3. Run Python Scripts
-
-Navigate to the directory containing the repository or script and run a Python file using:
+If Cellpose crashes with an OpenMP error on Windows, run this first.
 
 ```bash
-python script_name.py
+set KMP_DUPLICATE_LIB_OK=TRUE
 ```
 
-For example:
-
-```bash
-python statistics.py
-```
-
-The exact paths used by some scripts may need to be changed depending on where the data are stored.
+Then run any script with `python script_name.py`. Most scripts have file paths written in for the lab workstation (`D:\Conn_3dpipeline\...`), so update those before running on another machine.
 
 ---
 
-# Required Python Libraries
+## Data not included
 
-The scripts use a number of scientific Python libraries, including:
+These folders live on the lab workstation and are too large for GitHub.
 
-* NumPy
-* pandas
-* SciPy
-* Matplotlib
-* scikit-image
-* tifffile
-* Cellpose
+```text
+raw/  raw_converted/  cropped/  masks/  models/  training/
+```
 
-PyTorch and other supporting packages may also be required by individual scripts.
-
-The exact packages required depend on which part of the pipeline is being run.
+The full stacked mask volume is about 333 GB (84 GB at 50% scale).
 
 ---
 
-# Data Not Included in This Repository
+## Citation
 
-The raw microscopy data and large intermediate datasets are intentionally not included in GitHub.
-
-This includes large collections of TIFF images and other files generated during processing, including:
-
-```text
-raw/
-raw_converted/
-cropped/
-masks/
-models/
-training/
+```
+K. Hynes, Allodi Lab, University of St Andrews, 2026
 ```
 
-The raw dataset contains a large number of microscopy files, making it unsuitable for storage directly in this repository.
+- Stringer, C., et al. (2021). Cellpose: a generalist algorithm for cellular segmentation. *Nature Methods*, 18(1), 100–106.
+- van der Walt, S., et al. (2014). scikit-image: image processing in Python. *PeerJ*, 2, e453.
+- Wang, Y., et al. (2020). SynQuant: An automatic tool to quantify synapses from microscopy images. *Bioinformatics*, 36(5), 1599–1606. (Tested, not used in the final pipeline.)
 
-The repository therefore focuses on the **code, processed results, statistical outputs, and visualization outputs** required to document the analysis.
+## Acknowledgements
 
----
-
-# TDP-43 and WT Pipeline
-
-This repository primarily contains the completed analysis for the **hTDP-43 mouse model**.
-
-The overall project is intended to include two sides:
-
-1. **hTDP-43 mouse model**
-2. **WT (wild-type) mouse model**
-
-The hTDP-43 side of the pipeline was developed and **analyzed** during this project.
-
-The WT component has not yet been completed and will be continued by another student during the next academic year.
-
-Several WT-related scripts have already been included in the repository to provide a starting point for this future work, including:
-
-```text
-batch_process_WT.py
-convert_WT_C00.py
-convert_WT_C01.py
-convert_WT_C02.py
-stack_masks_WT.py
-crop_WT_C01.py
-```
-
-These scripts can be developed further when the WT microscopy data become available.
-
----
-
-# Reproducibility
-
-The repository is designed to keep the computational workflow together in one location.
-
-The general workflow is:
-
-```text
-1. Convert microscopy data
-2. Check image alignment and volume
-3. Crop images
-4. Generate neuron masks
-5. Detect synapses
-6. Match synapses to neurons
-7. Calculate neuron-level measurements
-8. Perform statistical analysis
-9. Generate visualizations
-10. Review final results
-```
-
-The raw microscopy data should be stored separately and supplied to the relevant processing stages.
-
-Because some scripts contain paths specific to the original analysis environment, file paths may need to be modified before running the pipeline on another computer.
-
----
-
-# Repository Outputs
-
-The repository contains four main types of outputs.
-
-### Matching
-
-```text
-results/matching/
-```
-
-Contains the neuron-level synapse matching datasets.
-
-### Neuron Measurements
-
-```text
-results/neuron_measurements/
-```
-
-Contains measurements and quality-control information related to the neuron segmentation and matching process.
-
-### Statistics
-
-```text
-results/statistics/
-```
-
-Contains numerical statistical results and figures generated from the matched neuron datasets.
-
-### Visualizations
-
-```text
-results/visualizations/
-```
-
-Contains image-based quality-control and analysis figures.
-
----
-
-# Progress Documentation
-
-A project progress record is also included:
-
-```text
-Progress_updates.txt
-```
-
-This documents the development of the pipeline and can be used to understand how the analysis progressed throughout the project.
-
----
-
-# Summary
-
-This repository provides the computational framework for **analyzing** 3D light-sheet microscopy data from the hTDP-43 mouse model.
-
-The pipeline combines:
-
-* Image processing
-* Neuron segmentation
-* Synapse detection
-* Synapse-to-neuron matching
-* Neuron-level measurements
-* Statistical analysis
-* Visualization and quality control
-
-The main output is a quantitative description of GlyT2 and Gephyrin synaptic measurements at the individual-neuron level.
-
-The repository contains the code and analysis outputs while keeping the large microscopy datasets and intermediate files outside of GitHub.
-
-The WT portion of the pipeline is intended to be completed and extended by a future student.
+Developed by K. Hynes in the Allodi Lab, University of St Andrews, under the supervision of Dr Ilary Allodi. Light-sheet data were acquired at the LSM3D Facility, University of Edinburgh. This work extends the 2D pipeline in Mora et al. (2024).
